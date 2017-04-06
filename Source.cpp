@@ -2,56 +2,66 @@
 #include <stdio.h>
 #include <iostream>
 
+using namespace std;
 
-#define LIMIT     25     
+
+#define LIMIT     5     
 #define FIRST     0   
+#define ELEMENT   10
+#define MAXSIZE   100
 
-void print_prime_nr(int n);
+
 
 int main(int argc, char *argv[])
 {
-	
-	int   ntasks, rank, n, pcsum, mystart, stride;           
-			
+
+	int   ntasks, rank;
+	int array[100];       //array
+	int i;
+	int pozition;         //position of the element
+	int x;
+	int low, high;
+	int maxPosition;
+
+
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &ntasks);
-			
-	mystart = (rank * 2) + 1;      
-	stride = ntasks*2 ;     
-	
-									
-	if (rank == FIRST) {
-		for (n = mystart; n <= LIMIT; n = n + stride) {
-			print_prime_nr(n);
-				
-			}
-		}
-		
-		printf("Done.");
 
-	
-	if (rank > FIRST) {
-		for (n = mystart; n <= LIMIT; n = n + stride)
-			print_prime_nr(n);
-						
-		}
-			
+
+	if (0 == rank) {
+		//read the array
+		for (i = 0; i < LIMIT; i++)
+			//scanf("%d", array[i]);	
+			cin >> array[i];
+	}
+
+	//Broadcast data
+	MPI_Bcast(array, MAXSIZE, MPI_INT, 0, MPI_COMM_WORLD);
+
+	x = MAXSIZE / ntasks; 
+	low = rank * x;
+	high = low + x;
+	for (i = LIMIT; i > 0; i--) {
+		if (array[i] == ELEMENT) {
+			pozition = i;
+			break;
+		}	
+	}
+
+	printf("I got %d position from %d\n", pozition, rank);
+
+	//compute position
+
+	MPI_Reduce(&pozition, &maxPosition, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+
+	if (0 == rank) {
+		printf("The max position is%d\n", maxPosition);
+	}
+		
 	system("PAUSE");
 	MPI_Finalize();
 
-}	
-
-	
-void print_prime_nr(int n) {
-	int i, k = 0;
-
-	for (i = 1; i <= n/2; i++) {
-		if (n%i == 0)
-			k++;
-	}
-
-	if (k == 1) 
-		printf("\n%d ", n);
-	
 }
+
+
